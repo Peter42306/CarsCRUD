@@ -8,16 +8,21 @@ namespace CarsCRUD.Controllers
     public class CarsController : Controller
     {
         private readonly CarsContext _context;
+        private readonly ILogger<CarsController> _logger;
 
-        public CarsController(CarsContext context)
+        public CarsController(CarsContext context,ILogger<CarsController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            _logger.LogInformation("Fetching all cars from the database");
             IEnumerable<Car> cars = await _context.Cars.ToListAsync();
+
+            _logger.LogInformation("Successfully fetched {CarsCount} cars", cars.Count());
             return View(cars);
         }
 
@@ -26,15 +31,20 @@ namespace CarsCRUD.Controllers
         {
             if (id == null)
             {
-                return NotFound();
+				_logger.LogWarning("Details action invoked with null ID.");
+				return NotFound();
             }
 
-            var car = await _context.Cars.FirstOrDefaultAsync(item => item.Id == id);
+			_logger.LogInformation("Fetching details for car with ID: {CarId}", id);
+			var car = await _context.Cars.FirstOrDefaultAsync(item => item.Id == id);
             
             if (car == null)
             {
-                return NotFound();
+				_logger.LogWarning("Car with ID {CarId} not found.", id);
+				return NotFound();
             }
+
+            _logger.LogInformation("Successfully fetched details for car with ID {CarId}", id);            
             return View(car);
         }
 
@@ -43,32 +53,40 @@ namespace CarsCRUD.Controllers
         {
             if (id==null)
             {
-                return NotFound();
+				_logger.LogWarning("Details action invoked with null ID.");
+				return NotFound();
             }
 
-            var car= await _context.Cars.FirstOrDefaultAsync(item=>item.Id == id);
+			_logger.LogInformation("Fetching details for car with ID: {CarId}", id);
+			var car= await _context.Cars.FirstOrDefaultAsync(item=>item.Id == id);
             
             if(car == null)
             {
-                return NotFound();
+				_logger.LogWarning("Car with ID {CarId} not found.", id);
+				return NotFound();
             }
 
-            return View(car);
+			_logger.LogInformation("Successfully found car with ID {CarId}", id);
+			return View(car);
         }
 
         [HttpPost,ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult>DeleteConfirmed(int id)
         {
+            _logger.LogInformation("Car with ID {CarId} is found", id);
             var car = await _context.Cars.FindAsync(id);
 
             if (car != null)
             {
+                _logger.LogInformation("Car with ID {CarId} is removed from database", id);
                 _context.Cars.Remove(car);
             }
 
+            _logger.LogInformation("Datebase saved");
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Redirected to Cars/Index after car with ID {CarId} was removed", id);
             return RedirectToAction("Index");
         }
 
